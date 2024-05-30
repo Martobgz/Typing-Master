@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inventory List</title>
+</head>
+<body>
+    <h1>Inventory List</h1>
+    <a href="{% url 'add_inventory' %}">Add New Item</a>
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Serial Number</th>
+            <th>User</th>
+            <th>Actions</th>
+        </tr>
+        {% for item in items %}
+        <tr>
+            <td>{{ item.name }}</td>
+            <td>{{ item.serial_number }}</td>
+            <td>{{ item.user.username }}</td>
+            <td>
+                <a href="{% url 'inventory_detail' item.id %}">Details</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
