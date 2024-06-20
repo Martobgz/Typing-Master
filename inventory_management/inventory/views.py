@@ -2,37 +2,50 @@ from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views.generic import TemplateView, View, CreateView, UpdateView, DeleteView
 from django.contrib.auth import authenticate, login
-from django.contrib.auth.mixins import LoginRequiredMixin
+# from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
+
 from .forms import UserRegisterForm, InventoryItemForm
 from .models import InventoryItem, Category
 from inventory_management.settings import LOW_QUANTITY
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.shortcuts import render
+from django.contrib import messages
+from .models import InventoryItem
 
+LOW_QUANTITY = 10  
 class Index(TemplateView):
 	template_name = 'inventory/index.html'
 
-class Dashboard(LoginRequiredMixin, View):
-	def get(self, request):
-		items = InventoryItem.objects.filter(user=self.request.user.id).order_by('id')
+class LoginRequiredMixin:
+    pass
+class Dashboard(View):
+    template_name = 'dashboard.html'
 
-		low_inventory = InventoryItem.objects.filter(
-			user=self.request.user.id,
-			quantity__lte=LOW_QUANTITY
-		)
+    @method_decorator(login_required)
+    def get(self, request):
+        items = InventoryItem.objects.filter(user=request.user).order_by('id')
 
-		if low_inventory.count() > 0:
-			if low_inventory.count() > 1:
-				messages.error(request, f'{low_inventory.count()} items have low inventory')
-			else:
-				messages.error(request, f'{low_inventory.count()} item has low inventory')
+        low_inventory = InventoryItem.objects.filter(
+            user=request.user,
+            quantity__lte=LOW_QUANTITY
+        )
 
-		low_inventory_ids = InventoryItem.objects.filter(
-			user=self.request.user.id,
-			quantity__lte=LOW_QUANTITY
-		).values_list('id', flat=True)
+        if low_inventory.count() > 0:
+            if low_inventory.count() > 1:
+                messages.error(request, f'{low_inventory.count()} items have low inventory')
+            else:
+                messages.error(request, f'{low_inventory.count()} item has low inventory')
 
-		return render(request, 'inventory/dashboard.html', {'items': items, 'low_inventory_ids': low_inventory_ids})
+        low_inventory_ids = InventoryItem.objects.filter(
+            user=request.user,
+            quantity__lte=LOW_QUANTITY
+        ).values_list('id', flat=True)
 
+        return render(request, 'inventory/dashboard.html', {'items': items, 'low_inventory_ids': low_inventory_ids})
 class SignUpView(View):
 	def get(self, request):
 		form = UserRegisterForm()
